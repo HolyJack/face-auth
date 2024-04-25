@@ -9,7 +9,7 @@ function Login() {
   const [imgSrc, setImgSrc] = useState(null);
   const [username, setUsername] = useState(null);
     const mutation = useMutation({ mutationFn: ({ imgSrc }) => {
-        return axios.post("http://localhost:40/retrieve", { imgSrc }).then(res => setUsername(res.data))
+        return axios.post("/login", { img: imgSrc }).then(res => setUsername(res.data.login))
     } })
 
     function onSubmit(e) {

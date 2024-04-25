@@ -1,33 +1,34 @@
 from flask import Flask, request, jsonify
-#from api import FaceRecognitionAPI
+from api import FaceRecognitionAPI
+import base64
+from io import BytesIO
+from PIL import Image
+import re
 
 
-#faceRecognitionAPI = FaceRecognitionAPI()
+faceRecognitionAPI = FaceRecognitionAPI()
 app = Flask(__name__)
 
 
 @app.route('/register', methods=['POST'])
 def register_user():
     data = request.json
-    print(data)
-    username = data.get('username')
-    photo = data.get('photo')
-    #try:
-    #    faceRecognitionAPI.register_user(username, photo)
-    #except Exception:
-    #    return jsonify({"failed"})
-    return jsonify({'success'})
+    login = data.get('login')
+    img64 = re.sub('^data:image/.+;base64,', '', data['img'])
+    img = Image.open(BytesIO(base64.b64decode(img64)))
+    faceRecognitionAPI.register_user(login, img)
+    response = jsonify({'success': "true"})
+    return response
 
 
-@app.route('/retrieve', methods=['POST'])
+@app.route('/login', methods=['POST'])
 def retrieve_username():
     data = request.json
-    photo = data.get('photo')
-    #try:
-    #    username = faceRecognitionAPI.detect_user(photo)
-    #except Exception:
-    #    return jsonify("failed")
-    return jsonify({'username': username})
+    img64 = re.sub('^data:image/.+;base64,', '', data['img'])
+    img = Image.open(BytesIO(base64.b64decode(img64)))
+    login = faceRecognitionAPI.detect_user(img)
+    response = jsonify({"login": login})
+    return response
 
 
 if __name__ == '__main__':

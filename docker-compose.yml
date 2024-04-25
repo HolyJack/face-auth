@@ -2,11 +2,40 @@ services:
   frontend:
     build:
       context: ./frontend
-
     ports:
       - 8080:8080
+    networks:
+      - face_auth_network
   backend:
     build:
       context: ./backend
-    ports:
-      - 40:40
+    volumes:
+      - db_volume:/var/lib/postgresql/data
+    networks:
+      - face_auth_network
+    environment:
+      - POSTGRES_HOST=db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
+    depends_on:
+      - db
+  db:
+    image: ankane/pgvector:v0.5.1
+    volumes:
+      - db_volume:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql 
+    networks:
+      - face_auth_network
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_HOST_AUTH_METHOD=trust
+
+volumes:
+  db_volume:
+
+networks:
+  face_auth_network:
+

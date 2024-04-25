@@ -1,135 +1,50 @@
-from keras.models import Model as Model_
-from keras.models import Sequential
-from keras.layers import (
-        ZeroPadding2D,
-        Convolution2D,
-        MaxPooling2D,
-        Dropout,
-        Flatten,
-        Activation
-        )
+from facenet_pytorch import MTCNN, InceptionResnetV1
+import torch
+import os
 from PIL import Image
-import numpy as np
-from matplotlib import pyplot
-from typing import Union
-from scipy.spatial.distance import cosine
-from mtcnn.mtcnn import MTCNN
 
 
-class VGGFace(Sequential):
-    def __init__(self):
-        super(VGGFace, self).__init__()
-        self.add(ZeroPadding2D((1, 1), input_shape=(224, 224, 3)))
-        self.add(Convolution2D(64, (3, 3), activation='relu'))
-        self.add(ZeroPadding2D((1, 1)))
-        self.add(Convolution2D(64, (3, 3), activation='relu'))
-        self.add(MaxPooling2D((2, 2), strides=(2, 2)))
-
-        self.add(ZeroPadding2D((1, 1)))
-        self.add(Convolution2D(128, (3, 3), activation='relu'))
-        self.add(ZeroPadding2D((1, 1)))
-        self.add(Convolution2D(128, (3, 3), activation='relu'))
-        self.add(MaxPooling2D((2, 2), strides=(2, 2)))
-
-        self.add(ZeroPadding2D((1, 1)))
-        self.add(Convolution2D(256, (3, 3), activation='relu'))
-        self.add(ZeroPadding2D((1, 1)))
-        self.add(Convolution2D(256, (3, 3), activation='relu'))
-        self.add(ZeroPadding2D((1, 1)))
-        self.add(Convolution2D(256, (3, 3), activation='relu'))
-        self.add(MaxPooling2D((2, 2), strides=(2, 2)))
-
-        self.add(ZeroPadding2D((1, 1)))
-        self.add(Convolution2D(512, (3, 3), activation='relu'))
-        self.add(ZeroPadding2D((1, 1)))
-        self.add(Convolution2D(512, (3, 3), activation='relu'))
-        self.add(ZeroPadding2D((1, 1)))
-        self.add(Convolution2D(512, (3, 3), activation='relu'))
-        self.add(MaxPooling2D((2, 2), strides=(2, 2)))
-
-        self.add(ZeroPadding2D((1, 1)))
-        self.add(Convolution2D(512, (3, 3), activation='relu'))
-        self.add(ZeroPadding2D((1, 1)))
-        self.add(Convolution2D(512, (3, 3), activation='relu'))
-        self.add(ZeroPadding2D((1, 1)))
-        self.add(Convolution2D(512, (3, 3), activation='relu'))
-        self.add(MaxPooling2D((2, 2), strides=(2, 2)))
-
-        self.add(Convolution2D(4096, (7, 7), activation='relu'))
-        self.add(Dropout(0.5))
-        self.add(Convolution2D(4096, (1, 1), activation='relu'))
-        self.add(Dropout(0.5))
-        self.add(Convolution2D(2622, (1, 1)))
-        self.add(Flatten())
-        self.add(Activation('softmax'))
-
-
-# Модель
 class Model:
-
-    image_size = (224, 224)
-    model = None
-
     def __init__(self):
-        self.model_ready = False
-
-        if not Model.model:
-            Model.model = self.VGGFace_model()
-        else:
-            self.model_ready = True
-
-    def VGGFace_model(self):
-        vgg_model = VGGFace()
-        vgg_model.load_weights('./misc/vgg_face_weights.h5')
-        self.model_ready = True
-        vgg_face_descriptor = Model_(
-                inputs=vgg_model.layers[0].input,
-                outputs=vgg_model.layers[-2].output
+        self.workers = 0 if os.name == 'nt' else 4
+        self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+        print('Running on device: {}'.format(self.device))
+        self.mtcnn = MTCNN(
+            image_size=160, margin=0, min_face_size=20,
+            thresholds=[0.6, 0.7, 0.7], factor=0.709, post_process=True,
+            device=self.device
         )
 
-        return vgg_face_descriptor
+        self.resnet = InceptionResnetV1(pretrained='vggface2').eval().to(self.device)
+        self.resnet.classify = False
 
-    @classmethod
-    def detect_face(cls, image: Union[str, np.array]) -> np.array:
-        if type(image) is str:
-            image = pyplot.imread(image)
+    def get_crop(self, img, save_path=None):
+        # Get cropped and prewhitened image tensor
+        img_cropped = self.mtcnn(img)
+        return img_cropped
 
-        detector = MTCNN()
-        faces = detector.detect_faces(image)
+    def get_embedding_from_crop(self, img_cropped):
+        # Calculate embedding (unsqueeze to add batch dimension)
+        return self.resnet(img_cropped.unsqueeze(0))
 
-        x1, y1, width, height = faces[0]['box']
-        x2, y2 = x1 + width, y1 + height
+    def get_embedding(self, img):
+        img_cropped = self.get_crop(img)
+        return self.get_embedding_from_crop(img_cropped)
 
-        face = image[y1:y2, x1:x2]
+    def get_distance(self, e1, e2):
+        return (e1 - e2).norm().item()
 
-        face_image = Image.fromarray(face)
-        face_array = np.asarray(face_image)
 
-        return face_array
+if __name__ == '__main__':
+    model = Model()
 
-    def get_face_embedding(self, image: Union[str, np.array]) -> np.array:
-        if type(image) is str:
-            image = pyplot.imread(image)
+    img = Image.open("./photo.jpg")
+    e1 = model.get_embedding(img)
 
-        img = Image.fromarray(image)
-        image = np.asarray(img.resize(self.image_size)).reshape(-1, 224, 224, 3)
-
-        embedding = self.model.predict(image)[0, :]
-
-        return embedding
-
-    def compare(self, image1: np.array, image2: np.array) -> int:
-        if not self.model_ready:
-            raise RuntimeError("Модель еще не обучена")
-
-        if cosine(image1, image2) < 0.42:
-            return 1
-        return 0
-
-    def recognize_from_db(self, image: Union[str, np.array], db) -> str:
-        face = [self.get_face_embedding(self.detect_face(image))]
-        for i, embedding in enumerate(db.get_all()):
-            if self.compare(face, embedding):
-                return db.df.login[db.df.index == i].item()
-
-        return None
+    print(e1.size())
+    print(type(e1))
+    numpy_e1 = e1.detach().cpu().numpy()
+    print(numpy_e1.size)
+    print(type(numpy_e1))
+    tuple_e1 = tuple(numpy_e1)
+    print(tuple_e1[0])

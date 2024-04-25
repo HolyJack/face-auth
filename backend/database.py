@@ -1,57 +1,40 @@
-import numpy as np
-import pandas as pd
-from datetime import datetime
-import warnings
+import os
+import psycopg
+from pgvector.psycopg import register_vector
 
 
 class DataBase:
-    BASE_DIR = './logins.pckl'
-    columns = ['login', 'embedding', 'last_update']
 
-    def __init__(self) -> None:
-        try:
-            self.df = pd.read_pickle(self.BASE_DIR)
-            self.df.reset_index(drop=True, inplace=True)
-        except FileNotFoundError:
-            self.df = pd.DataFrame(columns=['login', 'embedding', 'last_update'])
-            self.save()
+    def __init__(self):
+        get_env = os.environ.get
+        self.conn = psycopg.connect(
+                user=get_env("POSTGRES_USER"),
+                password=get_env("POSTGRES_PASSWORD"),
+                host=get_env("POSTGRES_HOST"),
+                dbname=get_env("POSTGRES_DB")
+        )
+        register_vector(self.conn)
 
-    def add_new_face(self, login: str, embedding: np.array):
-        time = datetime.isoformat(datetime.now(), timespec = 'seconds', sep=' ')
-        if login in set(self.df.login):
-            warnings.warn('Login already in database. Use update_face method to add new user.')
-            return 
-
-        new_row = pd.DataFrame([[login, [embedding], time]], columns=self.columns)
-        self.df = pd.concat([self.df, new_row])
-        self.df.reset_index(drop=True, inplace=True)
-        self.save()
-
-    def update_face(self, login: str, embedding: np.array):
-        if login not in set(self.df.login):
-            warnings.warn('No such login in database. Use add_new_face method to update user face.')
-            return
-
-        self.df = self.df[self.df.login != login]
-        self.add_new_face(login, embedding)
-        self.save()
+    def add_user(self, login, embedding):
+        cur = self.conn.cursor()
+        cur.execute(
+                "INSERT INTO embeddings (login, embedding) VALUES (%s, %s)",
+                [login, embedding]
+        )
+        self.conn.commit()
 
     def delete_user(self, login):
-        self.df = self.df[self.df.login != login]
-        self.save()
+        self.cur.execute(
+            "DELETE FROM embeddings WHERE login = %s",
+            (login)
+        )
 
-    def get(self, login: str) -> np.array:
-        return self.df.embedding[self.df.login == login]
+    def get_user(self, embedding):
+        cur = self.conn.cursor()
+        res = cur.execute('SELECT login FROM embeddings ORDER BY embedding <-> %s LIMIT 5', (embedding,)).fetchall()[0]
+        return res[0]
 
-    def get_all(self):
-        return self.df.embedding
+    def count(self):
 
-    def count(self) -> int:
-        return self.df.shape[0]
-
-    def clear(self):
-        self.df = pd.DataFrame(columns=['login', 'embedding', 'last_update'])
-        self.save()
-
-    def save(self):
-        self.df.to_pickle(self.BASE_DIR)
+        self.cur.execute("SELECT COUNT(*) FROM embeddings")
+        return self.cur.fetchone()[0]

@@ -4,11 +4,8 @@ COPY . /app/
 WORKDIR /app
 RUN rm -rf node_modules && npm install && npm run build
 
-
-FROM node:alpine as production
+FROM nginx:alpine as production
 WORKDIR /app
-COPY --from=build /app/dist/ /app/
-COPY --from=build /app/node_modules /app/
 
-RUN npm install -g serve
-ENTRYPOINT ["serve", "-s", "/app", "-l", "8080"]
+COPY --from=build /app/dist/ /usr/share/nginx/html
+COPY /deployment/nginx.default.conf /etc/nginx/conf.d/default.conf
