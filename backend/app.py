@@ -16,8 +16,12 @@ def register_user():
     login = data.get('login')
     img64 = re.sub('^data:image/.+;base64,', '', data['img'])
     img = Image.open(BytesIO(base64.b64decode(img64)))
-    faceRecognitionAPI.register_user(login, img)
-    response = jsonify({'success': "true"})
+    try:
+        faceRecognitionAPI.register_user(login, img)
+        response = jsonify({'success': "true"})
+    except Exception as e:
+        response = jsonify({'success': "false", 'message': str(e)})
+        response.status_code = 409
     return response
 
 
@@ -26,8 +30,12 @@ def retrieve_username():
     data = request.json
     img64 = re.sub('^data:image/.+;base64,', '', data['img'])
     img = Image.open(BytesIO(base64.b64decode(img64)))
-    login = faceRecognitionAPI.detect_user(img)
-    response = jsonify({"login": login})
+    try:
+        login = faceRecognitionAPI.detect_user(img)
+        response = jsonify({"login": login})
+    except Exception as e:
+        response = jsonify({'success': "false", 'message': str(e)})
+        response.status_code = 409
     return response
 
 

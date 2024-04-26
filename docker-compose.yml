@@ -5,14 +5,16 @@ services:
     ports:
       - 8080:8080
     networks:
-      - face_auth_network
+      - custom_network
+    restart: unless-stopped
   backend:
     build:
       context: ./backend
     volumes:
       - db_volume:/var/lib/postgresql/data
     networks:
-      - face_auth_network
+      - custom_network
+    restart: unless-stopped
     environment:
       - POSTGRES_HOST=db
       - POSTGRES_USER=postgres
@@ -26,8 +28,8 @@ services:
       - db_volume:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql 
     networks:
-      - face_auth_network
-    restart: always
+      - custom_network
+    restart: unless-stopped
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
@@ -37,5 +39,4 @@ volumes:
   db_volume:
 
 networks:
-  face_auth_network:
-
+  custom_network:

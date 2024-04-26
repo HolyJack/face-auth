@@ -16,12 +16,15 @@ class DataBase:
         register_vector(self.conn)
 
     def add_user(self, login, embedding):
-        cur = self.conn.cursor()
-        cur.execute(
-                "INSERT INTO embeddings (login, embedding) VALUES (%s, %s)",
-                [login, embedding]
-        )
-        self.conn.commit()
+        try:
+            cur = self.conn.cursor()
+            cur.execute(
+                    "INSERT INTO embeddings (login, embedding) VALUES (%s, %s)",
+                    [login, embedding]
+            )
+            self.conn.commit()
+        except Exception:
+            self.conn.rollback()
 
     def delete_user(self, login):
         self.cur.execute(
@@ -30,8 +33,12 @@ class DataBase:
         )
 
     def get_user(self, embedding):
-        cur = self.conn.cursor()
-        res = cur.execute('SELECT login FROM embeddings ORDER BY embedding <-> %s LIMIT 5', (embedding,)).fetchall()[0]
+        try:
+            cur = self.conn.cursor()
+            res = cur.execute('SELECT login FROM embeddings ORDER BY embedding <-> %s LIMIT 1', (embedding,)).fetchone()
+            self.conn.commit()
+        except Exception:
+            self.conn.rollback()
         return res[0]
 
     def count(self):

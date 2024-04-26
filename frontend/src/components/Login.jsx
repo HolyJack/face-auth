@@ -24,11 +24,11 @@ function Login() {
     </CardHeader>
     <CardBody className="flex flex-col gap-2">
       <Card>
-        <CardBody className="w-full">You are: {username}</CardBody>
+        <CardBody className="my-auto h-14 w-full justify-center">You are: {username}</CardBody>
       </Card>
-      <form onSubmit={onSubmit}>
-      <CustomWebcam imgSrc={imgSrc} setImgSrc={v => setImgSrc(v)}/>
-      <Button color="success" isLoading={mutation.isPending} className="mt-6" type="submit" isDisabled={!imgSrc}>Submit</Button>
+      <form onSubmit={onSubmit} className="flex flex-col gap-2">
+        <CustomWebcam imgSrc={imgSrc} setImgSrc={v => setImgSrc(v)}/>
+        <Button color="success" isLoading={mutation.isPending} className="mt-2" type="submit" isDisabled={!imgSrc}>Submit</Button>
       </form>
     </CardBody>
   </Card>

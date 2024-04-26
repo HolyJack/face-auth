@@ -23,10 +23,10 @@ function Register() {
       <h2 className="text-center text-xl font-semibold">Registration</h2>
     </CardHeader>
     <CardBody className="flex flex-col gap-2">
-      <form onSubmit={onSubmit}>
-      <Input label="Username" value={username} onChange={e => setUsername(e.target.value)}></Input>
-      <CustomWebcam imgSrc={imgSrc} setImgSrc={v => setImgSrc(v)}/>
-      <Button color="success" className="mt-6" type="submit" isLoading={mutation.isPending} isDisabled={!imgSrc || !username}>Submit</Button>
+      <form onSubmit={onSubmit} className="flex flex-col gap-2">
+        <Input className="h-14" label="Username" value={username} onChange={e => setUsername(e.target.value)}></Input>
+        <CustomWebcam imgSrc={imgSrc} setImgSrc={v => setImgSrc(v)}/>
+        <Button color="success" className="mt-2" type="submit" isLoading={mutation.isPending} isDisabled={!imgSrc || !username}>Submit</Button>
       </form>
     </CardBody>
   </Card>
