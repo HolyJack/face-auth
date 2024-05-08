@@ -7,12 +7,15 @@ class DataBase:
 
     def __init__(self):
         get_env = os.environ.get
-        self.conn = psycopg.connect(
-                user=get_env("POSTGRES_USER"),
-                password=get_env("POSTGRES_PASSWORD"),
-                host=get_env("POSTGRES_HOST"),
-                dbname=get_env("POSTGRES_DB")
-        )
+        try:
+            self.conn = psycopg.connect(
+                    user=get_env("POSTGRES_USER"),
+                    password=get_env("POSTGRES_PASSWORD"),
+                    host=get_env("POSTGRES_HOST"),
+                    dbname=get_env("POSTGRES_DB")
+            )
+        except Exception:
+            return None
         register_vector(self.conn)
 
     def add_user(self, login, embedding):

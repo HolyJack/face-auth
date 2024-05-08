@@ -8,5 +8,5 @@ RUN pip install -r /app/requirements.txt
 
 COPY . .
 
-EXPOSE 5000
-ENTRYPOINT ["gunicorn",  "-b", ":40", "app:app"]
+EXPOSE 80
+ENTRYPOINT ["gunicorn",  "-b", ":80", "app:app"]

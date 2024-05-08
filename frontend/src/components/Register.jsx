@@ -10,7 +10,7 @@ function Register() {
   const [imgSrc, setImgSrc] = useState(null);
 
   const mutation = useMutation({mutationFn: ({ username, imgSrc }) =>
-      { return axios.post("/register", { login: username, img: imgSrc }) }})
+      { return axios.post("/auth/register", { login: username, img: imgSrc }) }})
 
     function onSubmit(e) {
         e.preventDefault()

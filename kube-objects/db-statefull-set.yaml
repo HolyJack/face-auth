@@ -1,0 +1,53 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: db-service
+spec:
+  selector:
+    app: auth-web
+    tier: db
+  ports:
+    - port: 5432 
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: db-stateful-set
+spec:
+  serviceName: db
+  replicas: 1
+  selector:
+    matchLabels:
+      name: auth-web
+      tier: db
+  template:
+    metadata:
+      labels:
+        name: auth-web
+        tier: db
+    spec:
+      containers:
+        - name: db
+          image: holyjack/auth-web-db
+          env:
+            - name: POSTGRES_USER 
+              value: postgres
+            - name: POSTGRES_PASSWORD
+              value: postgres
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          ports:
+            - containerPort: 5432
+              name: postgres
+          volumeMounts:
+            - name: db-pv-claim
+              mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+    - metadata:
+        name: db-pv-claim
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 10Gi

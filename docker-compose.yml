@@ -23,10 +23,10 @@ services:
     depends_on:
       - db
   db:
-    image: ankane/pgvector:v0.5.1
+    build:
+      context: ./db
     volumes:
       - db_volume:/var/lib/postgresql/data
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql 
     networks:
       - custom_network
     restart: unless-stopped

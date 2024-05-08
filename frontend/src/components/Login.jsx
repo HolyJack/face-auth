@@ -8,8 +8,9 @@ import axios from "axios";
 function Login() {
   const [imgSrc, setImgSrc] = useState(null);
   const [username, setUsername] = useState(null);
-    const mutation = useMutation({ mutationFn: ({ imgSrc }) => {
-        return axios.post("/login", { img: imgSrc }).then(res => setUsername(res.data.login))
+
+  const mutation = useMutation({ mutationFn: ({ imgSrc }) => {
+        return axios.post("/auth/login", { img: imgSrc }).then(res => setUsername(res.data.login))
     } })
 
     function onSubmit(e) {
