@@ -15,6 +15,7 @@ class DataBase:
                     dbname=get_env("POSTGRES_DB")
             )
         except Exception:
+            print("DB connection error")
             return None
         register_vector(self.conn)
 

@@ -10,7 +10,19 @@ faceRecognitionAPI = FaceRecognitionAPI()
 app = Flask(__name__)
 
 
-@app.route('/register', methods=['POST'])
+@app.route("/")
+def index():
+    """Function to test the functionality of the API"""
+    return "Hello, world!"
+
+
+@app.route("/auth")
+def auth_welcome():
+    """Function to test the functionality of the API"""
+    return "Hello, world!"
+
+
+@app.route('/auth/register', methods=['POST'])
 def register_user():
     data = request.json
     login = data.get('login')
@@ -25,7 +37,7 @@ def register_user():
     return response
 
 
-@app.route('/login', methods=['POST'])
+@app.route('/auth/login', methods=['POST'])
 def retrieve_username():
     data = request.json
     img64 = re.sub('^data:image/.+;base64,', '', data['img'])

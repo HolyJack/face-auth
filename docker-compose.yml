@@ -1,5 +1,6 @@
 services:
   frontend:
+    # platform: linux/amd64
     build:
       context: ./frontend
     ports:
@@ -8,6 +9,7 @@ services:
       - custom_network
     restart: unless-stopped
   backend:
+    # platform: linux/amd64
     build:
       context: ./backend
     volumes:
@@ -23,6 +25,7 @@ services:
     depends_on:
       - db
   db:
+    # platform: linux/amd64
     build:
       context: ./db
     volumes:
